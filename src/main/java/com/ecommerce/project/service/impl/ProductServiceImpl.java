@@ -12,8 +12,14 @@ import com.ecommerce.project.service.ProductService;
 import lombok.AllArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.List;
+import java.util.UUID;
 
 @AllArgsConstructor
 @Service
@@ -94,5 +100,46 @@ public class ProductServiceImpl implements ProductService {
                 .orElseThrow(() -> new ResourceNotFoundException("Product", "productId", productId));
         productRepository.delete(product);
         return modelMapper.map(product,ProductDTO.class);
+    }
+
+    public ProductDTO updateProductImage(long productId, MultipartFile image) throws IOException {
+        //get the product from DB
+        Product productFromDb = productRepository.findById(productId)
+                .orElseThrow(() -> new ResourceNotFoundException("Product", "productId", productId));
+
+        //upload the file to server (here we are storing the product image in an images folder)
+        //get the file name of the server
+        String path = "images/";
+        String fileName = uploadImage(path, image);     //generic upload image method, which can upload any image on any path
+
+        //updating the new file name to the product
+        productFromDb.setProductImage(fileName);
+
+        //save the updated product
+        Product updatedProduct = productRepository.save(productFromDb);
+
+        //map product to DTO
+        return modelMapper.map(updatedProduct,ProductDTO.class);
+    }
+
+    private String uploadImage(String path, MultipartFile file) throws IOException {
+        //Get file name of current / original file
+        String originalFileName = file.getOriginalFilename();
+
+        //Generate a unique file name( while uploading there is a change of name conflict then we will override some image )
+        String randomId = UUID.randomUUID().toString();
+        //mat.jpg -> 123(randomId) -> 123.jpg
+        String fileName = randomId.concat(originalFileName.substring(originalFileName.indexOf(".")));
+        String filePath = path + File.separator + fileName;              //new folder file path. Instead of File.separator we can use "/" but then it wont work on some OS
+        //Check if path exist or create a new one
+        File folder = new File(path);
+        if(!folder.exists())
+            folder.mkdir();
+
+        //upload to server
+        Files.copy(file.getInputStream(), Paths.get(filePath));         //(input file, destination of file)
+
+        //Return file name
+        return fileName;
     }
 }
