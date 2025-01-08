@@ -1,9 +1,6 @@
 package com.ecommerce.project.controller;
 
-import com.ecommerce.project.dto.CategoryDTO;
 import com.ecommerce.project.dto.ProductDTO;
-import com.ecommerce.project.model.Category;
-import com.ecommerce.project.model.Product;
 import com.ecommerce.project.payload.ProductResponse;
 import com.ecommerce.project.service.ProductService;
 import lombok.AllArgsConstructor;
@@ -13,7 +10,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.util.List;
 
 @AllArgsConstructor
 @RestController
