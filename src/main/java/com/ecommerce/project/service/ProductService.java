@@ -9,11 +9,11 @@ import java.io.IOException;
 public interface ProductService {
     ProductDTO addProduct(long categoryId, ProductDTO product);
 
-    ProductResponse getAllProduct();
+    ProductResponse getAllProduct(int pageNumber, int pageSize, String sortBy, String sortOrder);
 
-    ProductResponse searchByCategory(long categoryId);
+    ProductResponse searchByCategory(long categoryId, int pageNumber, int pageSize, String sortBy, String sortOrder);
 
-    ProductResponse searchByKeyword(String keyword);
+    ProductResponse searchByKeyword(String keyword, int pageNumber, int pageSize, String sortBy, String sortOrder);
 
     ProductDTO updateProduct(ProductDTO productDTO);
 
