@@ -22,19 +22,13 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.util.List;
 
-//@AllArgsConstructor
-//@NoArgsConstructor
 @RequiredArgsConstructor
 @Service
 public class ProductServiceImpl implements ProductService {
 
-//    @Autowired
     private final ProductRepository productRepository;
-//    @Autowired
     private final CategoryRepository categoryRepository;
-//    @Autowired
     private final ModelMapper modelMapper;
-//    @Autowired
     private FileService fileService;
 
     @Value("${product.image}")
@@ -44,6 +38,12 @@ public class ProductServiceImpl implements ProductService {
     public ProductDTO addProduct(long categoryId, ProductDTO productDTO) {
         Category category = categoryRepository.findById(categoryId)
                 .orElseThrow(() -> new ResourceNotFoundException("Category","categoryId",categoryId));
+        List<Product> products = category.getProducts();
+        for(Product product : products) {
+            if (product.getProductName().equals(productDTO.getProductName())) {
+                throw new APIException("Product already exist");
+            }
+        }
         Product product = modelMapper.map(productDTO, Product.class);
         product.setProductImage("default.png");
         product.setCategory(category);
@@ -56,6 +56,9 @@ public class ProductServiceImpl implements ProductService {
 
     public ProductResponse getAllProduct() {
         List<Product> products = productRepository.findAll();
+        if(products.isEmpty()){
+            throw  new APIException("No category present");
+        }
         List<ProductDTO> productDTOS = products.stream().map(product -> modelMapper.map(product, ProductDTO.class)).toList();
 
         ProductResponse productResponse = new ProductResponse();
@@ -89,21 +92,25 @@ public class ProductServiceImpl implements ProductService {
     }
 
     public ProductDTO updateProduct(ProductDTO productDTO) {
-        Product product = productRepository.findById(productDTO.getProductId())
+        Product productFromDb = productRepository.findById(productDTO.getProductId())
                 .orElseThrow(() -> new ResourceNotFoundException("Product","productId",productDTO.getProductId()));
-
-        product.setProductName(productDTO.getProductName());
-        product.setDescription(productDTO.getDescription());
-        product.setQuantity(productDTO.getQuantity());
-        product.setPrice(productDTO.getPrice());
-        product.setDiscount(productDTO.getDiscount());
+        List<Product> products = productRepository.findAll();
+        for(Product product : products) {
+            if (product.getProductName().equals(productDTO.getProductName())) {
+                throw new APIException("Product already exist");
+            }
+        }
+        productFromDb.setProductName(productDTO.getProductName());
+        productFromDb.setDescription(productDTO.getDescription());
+        productFromDb.setQuantity(productDTO.getQuantity());
+        productFromDb.setPrice(productDTO.getPrice());
+        productFromDb.setDiscount(productDTO.getDiscount());
         double specialPrice = productDTO.getPrice() -((productDTO.getDiscount() * 0.01) * productDTO.getPrice());
-        product.setSpecialPrice(specialPrice);
+        productFromDb.setSpecialPrice(specialPrice);
 
-        Product updatedProduct = productRepository.save(product);
+        Product updatedProduct = productRepository.save(productFromDb);
 
-        ProductDTO updatedProductDTO = modelMapper.map(updatedProduct, ProductDTO.class);
-        return updatedProductDTO;
+        return modelMapper.map(updatedProduct, ProductDTO.class);
     }
 
     public ProductDTO deleteProduct(long productId) {
